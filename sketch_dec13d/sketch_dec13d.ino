@@ -1,9 +1,25 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <RTClib.h>
 
 // Initialize the LCD with the I2C address (e.g., x27) and dimensions (16 columns, 2 rows)
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+RTC_DS3231 rtc;
+
+struct car {
+    int entryTime;   // Entry time in minutes since midnight
+    int exitTime;    // Exit time in minutes since midnight
+    float totalTime; // Total time in hours
+    float totalPrice; // Total price in currency
+
+    // Function to calculate total time and price
+    void calculate() {
+        totalTime = (exitTime - entryTime) / 60.0; // Convert minutes to hours
+        totalPrice = totalTime * 1000;            // Price per hour is 1000
+    }
+};
+car* myCar;
 // Create a boolean array of size 4, initialized to  (false)
 bool myArray[4] = {0, 0, 0, 0};
 
@@ -17,18 +33,25 @@ bool myArray[4] = {0, 0, 0, 0};
 int keys[] = {key1, key2, key3, key4};
 const int numKeys = sizeof(keys) / sizeof(keys[0]); 
 
+
 void setup() {
-    // Initialize the LCD  
+    //Serial connect for monitoring
+    Serial.begin(9600);
+    // Initializing all   
     lcd.begin();
-    lcd.backlight(); // Turn on the backlight  
-    Serial.begin(9600); // Initialize serial communication for user input  
+    lcd.backlight();
+    //RTC
+    rtc.begin();
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // Uncomment the following line to set the RTC manually:
+    // setRTC(2024, 12, 13, 22, 21, 0); // Example: 2024-12-13 10:30:00
+
+    //loop pinmode for keypad
     for (int i = 0; i < numKeys; i++) {
     pinMode(keys[i], INPUT_PULLUP);
 }
 }
 void loop() {
-
-    // Get user input
     displayArray();
     carEntry();
     
@@ -130,3 +153,4 @@ bool spotCheck() {
     }
     return true; // Return true if all elements are 1  
 }
+
